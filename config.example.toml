@@ -1,0 +1,81 @@
+# Wavelog Relay configuration. Copy to config.toml and edit.
+
+[wavelog]
+url = "https://log.example.com"        # your Wavelog base URL (no trailing /index.php)
+# API v2 token (Wavelog: Account -> API tokens). Must start with wl2_.
+# Scopes: qso:write (logging), radio:write (TCI/CAT), lookup:read (rotator), station:read (home grid).
+token = "wl2_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+# token_env = "WAVELOG_TOKEN"           # alternatively read the token from an environment variable
+station_profile_id = 1                  # default station location QSOs are logged into
+index_php = true                        # set false if your server rewrites /api/v2 without index.php
+verify_tls = true
+
+[relay]
+spool_file = "wavelog-relay-spool.jsonl"   # QSOs waiting for upload survive restarts/outages
+failed_file = "wavelog-relay-failed.adi"   # QSOs Wavelog rejected, as ADIF, for manual import
+log_level = "INFO"
+
+[rotator]
+enabled = true
+host = "127.0.0.1"          # PC running PstRotatorAz
+port = 12000                # PstRotatorAz UDP port (Setup -> UDP Control)
+# my_grid = "FN31pr"        # your QTH; if omitted it is read from the Wavelog station profile
+# my_lat = 41.7
+# my_lon = -72.7
+offset = 0                  # add degrees if the antenna's "north" is not true north
+long_path = false
+min_change = 3              # do not move for heading changes smaller than this (degrees)
+debounce = 1.0              # seconds to wait for the operator to settle on a call
+
+# ---- WSJT-X / JTDX / MSHV ------------------------------------------------
+# One [[wsjtx]] block per UDP port. Several WSJT-X instances (--rig-name) may share
+# one port; each is identified by its instance id ("WSJT-X - IC7300").
+# In WSJT-X: Settings -> Reporting -> UDP Server = this host/port, and tick
+# "Accept UDP requests" if you forward to GridTracker/JTAlert.
+
+[[wsjtx]]
+name = "WSJT-X"
+bind = "127.0.0.1"
+port = 2237
+# multicast_group = "224.0.0.1"   # listen on a multicast group instead (shared with other apps)
+log_qsos = true
+rotate = true                      # turn the antenna when you select a DX call
+# radio = "WSJT-X"                 # also report dial freq/mode to Wavelog under this radio name
+# forward = ["127.0.0.1:2238"]     # re-send packets to GridTracker/JTAlert (replies are passed back)
+
+# Per-instance overrides, keyed by WSJT-X instance id:
+# [wsjtx.instances."WSJT-X - 6m"]
+# station_profile_id = 2
+# radio = "IC-9700"
+# rotate = false
+
+# A second WSJT-X on its own port:
+# [[wsjtx]]
+# name = "WSJT-X 2"
+# port = 2239
+# station_profile_id = 2
+
+# ---- N1MM Logger+ ---------------------------------------------------------
+# N1MM: Config -> Configure Ports... -> Broadcast Data: tick Contacts, Lookup, Radio
+# and set the IP:port to this machine, e.g. 127.0.0.1:12060
+
+[[n1mm]]
+name = "N1MM"
+bind = "0.0.0.0"
+port = 12060
+log_qsos = true
+rotate_on_lookup = true    # turn when a call is entered in the Entry Window
+rotate_on_log = false
+# station_profile_id = 3   # e.g. a dedicated contest station location
+# radio = "N1MM"           # report N1MM's radio frequency/mode to Wavelog
+# radio_nr = 1
+# forward = ["127.0.0.1:12061"]
+
+# ---- TCI radios (ExpertSDR / SunSDR, Thetis, ...) --------------------------
+[[tci]]
+name = "SunSDR"
+url = "ws://127.0.0.1:40001"
+trx = 0                    # receiver/transceiver index
+radio = "SunSDR2 Pro"      # radio name shown in Wavelog
+max_power = 100            # watts at 100% drive; remove to not report power
+heartbeat = 30             # re-send state every N seconds so Wavelog shows it live
