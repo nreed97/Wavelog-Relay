@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wavelog-relay"
+dynamic = ["version"]
+description = "Relay WSJT-X, N1MM+ and TCI radios to Wavelog (API v2) and steer PstRotatorAz"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = ["websockets>=12"]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.scripts]
+wavelog-relay = "wavelog_relay.__main__:main"
+
+[tool.setuptools]
+packages = ["wavelog_relay"]
+
+[tool.setuptools.dynamic]
+version = { attr = "wavelog_relay.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
